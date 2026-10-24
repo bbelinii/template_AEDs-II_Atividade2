@@ -53,8 +53,36 @@ public class Pilha<E> {
 	 * @throws IllegalArgumentException se a pilha não contém numItens elementos.
 	 */
 	public Pilha<E> subPilha(int numItens) {
-		
-		// TODO
-		return null;
+
+		Pilha<E> novaPilha = new Pilha<>();
+		Pilha<E> pilhafinal =  new Pilha<>();
+
+		int contador = 0;
+
+		while (contador < numItens) {
+
+			if (topo == fundo) {
+				throw new IllegalArgumentException("Itens insuficientes");
+			}
+
+			E item = this.desempilhar();
+
+			novaPilha.empilhar(item);
+
+			contador++;
+		}
+
+		int contador2 = 0;
+
+		while(contador2 < numItens){
+
+
+			E item = novaPilha.desempilhar();
+			pilhafinal.empilhar(item);
+			contador2++;
+
+		}
+
+		return pilhafinal;
 	}
 }
