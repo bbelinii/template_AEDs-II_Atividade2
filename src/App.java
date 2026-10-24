@@ -1,3 +1,4 @@
+
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.util.Scanner;
@@ -9,11 +10,7 @@ import java.util.function.Predicate;
 
 public class App {
 
-    static Pilha<Pedido> pilhaPedidos = new Pilha<>();
-
-    static Fila<Pedido> filaPedidos = new Fila<>();
-
-	/** Nome do arquivo de dados. O arquivo deve estar localizado na raiz do projeto */
+    /** Nome do arquivo de dados. O arquivo deve estar localizado na raiz do projeto */
     static String nomeArquivoDados;
 
     /** Scanner para leitura de dados do teclado */
@@ -27,6 +24,8 @@ public class App {
 
     /** Pilha de pedidos */
     static Pilha<Pedido> pilhaPedidos = new Pilha<>();
+
+    static Fila<Pedido> filaPedidos = new Fila<>();
 
     static void limparTela() {
         System.out.print("\033[H\033[2J");
@@ -47,37 +46,47 @@ public class App {
 
     static <T extends Number> T lerOpcao(String mensagem, Class<T> classe) {
 
-    	T valor;
+        T valor;
 
-    	System.out.println(mensagem);
-    	try {
-            valor = classe.getConstructor(String.class).newInstance(teclado.nextLine());
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-        		| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+        System.out.println(mensagem);
+
+        try {
+            valor = classe.getConstructor(String.class)
+                    .newInstance(teclado.nextLine());
+
+        } catch (InstantiationException | IllegalAccessException
+                 | IllegalArgumentException | InvocationTargetException
+                 | NoSuchMethodException | SecurityException e) {
             return null;
         }
+
         return valor;
     }
 
-    /** Imprime o menu principal, lê a opção do usuário e a retorna (int).
+    /**
+     * Imprime o menu principal, lê a opção do usuário e a retorna (int).
      * @return Um inteiro com a opção do usuário.
      */
     static int menu() {
         cabecalho();
+
         System.out.println("1 - Listar todos os produtos");
         System.out.println("2 - Procurar por um produto, por código");
         System.out.println("3 - Procurar por um produto, por nome");
         System.out.println("4 - Iniciar novo pedido");
         System.out.println("5 - Fechar pedido");
         System.out.println("6 - Listar produtos dos pedidos mais recentes");
+        System.out.println("7 - Calcular valor médio dos pedidos");
+        System.out.println("8 - Filtrar pedidos por valor");
         System.out.println("0 - Sair");
         System.out.print("Digite sua opção: ");
+
         return Integer.parseInt(teclado.nextLine());
     }
 
     /**
      * Lê os dados de um arquivo-texto e retorna um vetor de produtos. Arquivo-texto no formato
-     * N  (quantidade de produtos) <br/>
+     * N (quantidade de produtos) <br/>
      * tipo;descrição;preçoDeCusto;margemDeLucro;[dataDeValidade] <br/>
      * Deve haver uma linha para cada um dos produtos. Retorna um vetor vazio em caso de problemas com o arquivo.
      * @param nomeArquivoDados Nome do arquivo de dados a ser aberto.
@@ -85,74 +94,91 @@ public class App {
      */
     static Produto[] lerProdutos(String nomeArquivoDados) {
 
-    	Scanner arquivo = null;
-    	int numProdutos;
-    	String linha;
-    	Produto produto;
-    	Produto[] produtosCadastrados;
+        int numProdutos;
+        String linha;
+        Produto produto;
+        Produto[] produtosCadastrados;
 
-    	try {
-    		arquivo = new Scanner(new File(nomeArquivoDados), Charset.forName("UTF-8"));
+        try (Scanner arquivo = new Scanner(
+                new File(nomeArquivoDados),
+                Charset.forName("UTF-8"))) {
 
-    		numProdutos = Integer.parseInt(arquivo.nextLine());
-    		produtosCadastrados = new Produto[numProdutos];
+            numProdutos = Integer.parseInt(arquivo.nextLine());
+            produtosCadastrados = new Produto[numProdutos];
 
-    		for (int i = 0; i < numProdutos; i++) {
-    			linha = arquivo.nextLine();
-    			produto = Produto.criarDoTexto(linha);
-    			produtosCadastrados[i] = produto;
-    		}
-    		quantosProdutos = numProdutos;
+            for (int i = 0; i < numProdutos; i++) {
+                linha = arquivo.nextLine();
+                produto = Produto.criarDoTexto(linha);
+                produtosCadastrados[i] = produto;
+            }
 
-    	} catch (IOException excecaoArquivo) {
-    		produtosCadastrados = null;
-    	} finally {
-    		arquivo.close();
-    	}
+            quantosProdutos = numProdutos;
 
-    	return produtosCadastrados;
+        } catch (IOException | RuntimeException excecaoArquivo) {
+            produtosCadastrados = new Produto[0];
+            quantosProdutos = 0;
+        }
+
+        return produtosCadastrados;
     }
 
-    /** Localiza um produto no vetor de produtos cadastrados, a partir do código de produto informado pelo usuário, e o retorna.
-     *  Em caso de não encontrar o produto, retorna null
+    /**
+     * Localiza um produto no vetor de produtos cadastrados, a partir do código de produto informado pelo usuário, e o retorna.
+     * Em caso de não encontrar o produto, retorna null
      */
     static Produto localizarProduto() {
 
-    	Produto produto = null;
-    	Boolean localizado = false;
+        Produto produto = null;
+        Boolean localizado = false;
 
-    	cabecalho();
-    	System.out.println("Localizando um produto...");
-        int idProduto = lerOpcao("Digite o código identificador do produto desejado: ", Integer.class);
+        cabecalho();
+        System.out.println("Localizando um produto...");
+
+        Integer idProduto = lerOpcao(
+                "Digite o código identificador do produto desejado: ",
+                Integer.class
+        );
+
+        if (idProduto == null) {
+            return null;
+        }
+
         for (int i = 0; (i < quantosProdutos && !localizado); i++) {
-        	if (produtosCadastrados[i].hashCode() == idProduto) {
-        		produto = produtosCadastrados[i];
-        		localizado = true;
-        	}
+
+            if (produtosCadastrados[i].hashCode() == idProduto) {
+                produto = produtosCadastrados[i];
+                localizado = true;
+            }
         }
 
         return produto;
     }
 
-    /** Localiza um produto no vetor de produtos cadastrados, a partir do nome de produto informado pelo usuário, e o retorna.
-     *  A busca não é sensível ao caso. Em caso de não encontrar o produto, retorna null
-     *  @return O produto encontrado ou null, caso o produto não tenha sido localizado no vetor de produtos cadastrados.
+    /**
+     * Localiza um produto no vetor de produtos cadastrados, a partir do nome de produto informado pelo usuário, e o retorna.
+     * A busca não é sensível ao caso. Em caso de não encontrar o produto, retorna null
+     * @return O produto encontrado ou null, caso o produto não tenha sido localizado no vetor de produtos cadastrados.
      */
     static Produto localizarProdutoDescricao() {
 
-    	Produto produto = null;
-    	Boolean localizado = false;
-    	String descricao;
+        Produto produto = null;
+        Boolean localizado = false;
+        String descricao;
 
-    	cabecalho();
-    	System.out.println("Localizando um produto...");
-    	System.out.println("Digite o nome ou a descrição do produto desejado:");
+        cabecalho();
+        System.out.println("Localizando um produto...");
+        System.out.println("Digite o nome ou a descrição do produto desejado:");
+
         descricao = teclado.nextLine();
+
         for (int i = 0; (i < quantosProdutos && !localizado); i++) {
-        	if (produtosCadastrados[i].descricao.toLowerCase().equals(descricao.toLowerCase())) {
-        		produto = produtosCadastrados[i];
-        		localizado = true;
-    		}
+
+            if (produtosCadastrados[i].descricao.toLowerCase()
+                    .equals(descricao.toLowerCase())) {
+
+                produto = produtosCadastrados[i];
+                localizado = true;
+            }
         }
 
         return produto;
@@ -161,9 +187,10 @@ public class App {
     private static void mostrarProduto(Produto produto) {
 
         cabecalho();
+
         String mensagem = "Dados inválidos para o produto!";
 
-        if (produto != null){
+        if (produto != null) {
             mensagem = String.format("Dados do produto:\n%s", produto);
         }
 
@@ -175,8 +202,15 @@ public class App {
 
         cabecalho();
         System.out.println("\nPRODUTOS CADASTRADOS:");
+
         for (int i = 0; i < quantosProdutos; i++) {
-        	System.out.println(String.format("%02d - %s", (i + 1), produtosCadastrados[i].toString()));
+            System.out.println(
+                    String.format(
+                            "%02d - %s",
+                            (i + 1),
+                            produtosCadastrados[i].toString()
+                    )
+            );
         }
     }
 
@@ -187,24 +221,57 @@ public class App {
      */
     public static Pedido iniciarPedido() {
 
-    	int formaPagamento = lerOpcao("Digite a forma de pagamento do pedido, sendo 1 para pagamento à vista e 2 para pagamento a prazo", Integer.class);
-    	Pedido pedido = new Pedido(LocalDate.now(), formaPagamento);
-    	Produto produto;
-    	int numProdutos;
-    	int quantidade;
+        Integer formaPagamento = lerOpcao(
+                "Digite a forma de pagamento do pedido, sendo 1 para pagamento à vista e 2 para pagamento a prazo",
+                Integer.class
+        );
 
-    	listarTodosOsProdutos();
-    	System.out.println("Incluindo produtos no pedido...");
-    	numProdutos = lerOpcao("Quantos produtos serão incluídos no pedido?", Integer.class);
+        if (formaPagamento == null) {
+            System.out.println("Forma de pagamento inválida.");
+            return null;
+        }
+
+        Pedido pedido = new Pedido(LocalDate.now(), formaPagamento);
+
+        Produto produto;
+        Integer numProdutos;
+        Integer quantidade;
+
+        listarTodosOsProdutos();
+
+        System.out.println("Incluindo produtos no pedido...");
+
+        numProdutos = lerOpcao(
+                "Quantos produtos serão incluídos no pedido?",
+                Integer.class
+        );
+
+        if (numProdutos == null || numProdutos < 0) {
+            System.out.println("Quantidade inválida.");
+            return null;
+        }
+
         for (int i = 0; i < numProdutos; i++) {
-        	produto = localizarProdutoDescricao();
-        	if (produto == null) {
-        		System.out.println("Produto não encontrado");
-        		i--;
-        	} else {
-        		quantidade = lerOpcao("Quantos itens desse produto serão incluídos no pedido?", Integer.class);
-        		pedido.incluirProduto(produto, quantidade);
-        	}
+
+            produto = localizarProdutoDescricao();
+
+            if (produto == null) {
+                System.out.println("Produto não encontrado");
+                i--;
+
+            } else {
+
+                quantidade = lerOpcao(
+                        "Quantos itens desse produto serão incluídos no pedido?",
+                        Integer.class
+                );
+
+                if (quantidade != null && quantidade > 0) {
+                    pedido.incluirProduto(produto, quantidade);
+                } else {
+                    System.out.println("Quantidade inválida.");
+                }
+            }
         }
 
         return pedido;
@@ -215,72 +282,173 @@ public class App {
      * @param pedido O pedido que deve ser finalizado.
      */
     public static void finalizarPedido(Pedido pedido) {
-    	Pilha<Pedido> pilha = new Pilha<>();
-        pilha.empilhar(pedido);
 
+        if (pedido == null) {
+            System.out.println("Nenhum pedido para finalizar.");
+            return;
+        }
+
+        pilhaPedidos.empilhar(pedido);
+        filaPedidos.enfileirar(pedido);
+
+        System.out.println("Pedido finalizado com sucesso.");
     }
 
     public static void listarProdutosPedidosRecentes() {
 
-        Pilha<Pedido> recentes = pilhaPedidos.subPilha(int numitens);
+        Integer numItens = lerOpcao(
+                "Quantos pedidos recentes deseja listar?",
+                Integer.class
+        );
 
-        while(!recentes.vazia()){
-            Pedido pedido = recentes.desempilhar();
-            ItemDePedido[] itens = pedido.getItensDoPedido();
-            for (int i = 0; i <= itens.length; i++){
-                itens[i].getProduto();
-                System.out.println(itens[i].getProduto());
-            }
-
+        if (numItens == null || numItens <= 0) {
+            System.out.println("Quantidade inválida.");
+            return;
         }
 
+        Pilha<Pedido> recentes = pilhaPedidos.subPilha(numItens);
 
+        while (!recentes.vazia()) {
 
+            Pedido pedido = recentes.desempilhar();
 
+            ItemDePedido[] itens = pedido.getItensDoPedido();
 
+            for (int i = 0; i < itens.length; i++) {
+
+                if (itens[i] != null) {
+                    System.out.println(itens[i].getProduto());
+                }
+            }
+        }
     }
-    public static void mostrarPedidosFiltrados(int quantidade, double valorMinimo){
-        Fila<Pedido> filtrados = filaPedidos.filtrar(pedido -> pedido.valorFinal() >= valorMinimo, quantidade);
+
+    public static void mostrarPedidosFiltrados(
+            int quantidade,
+            double valorMinimo) {
+
+        Predicate<Pedido> condicao =
+                pedido -> pedido.valorFinal() >= valorMinimo;
+
+        Fila<Pedido> filtrados =
+                filaPedidos.filtrar(condicao, quantidade);
+
+        while (!filtrados.vazia()) {
+
+            Pedido pedido = filtrados.desenfileirar();
+
+            System.out.println(pedido);
+        }
     }
 
     public static void mostrarMediaPedidos(int quantidade) {
 
-        Function<Pedido, Double> extrator = pedido -> pedido.valorFinal();
-        double media = filaPedidos.calcularValorMedio(extrator, quantidade);
+        Function<Pedido, Double> extrator =
+                pedido -> pedido.valorFinal();
+
+        double media = filaPedidos.calcularValorMedio(
+                extrator,
+                quantidade
+        );
+
         System.out.println("Média: R$ " + media);
     }
 
+    public static void main(String[] args) {
 
-	public static void main(String[] args) {
+        teclado = new Scanner(
+                System.in,
+                Charset.forName("UTF-8")
+        );
 
-		teclado = new Scanner(System.in, Charset.forName("UTF-8"));
+        nomeArquivoDados = "produtos.txt";
 
-		nomeArquivoDados = "produtos.txt";
         produtosCadastrados = lerProdutos(nomeArquivoDados);
 
         Pedido pedido = null;
 
         int opcao = -1;
 
-        do{
-            opcao = menu();
-            switch (opcao) {
-                case 1 -> listarTodosOsProdutos();
-                case 2 -> mostrarProduto(localizarProduto());
-                case 3 -> mostrarProduto(localizarProdutoDescricao());
-                case 4 -> pedido = iniciarPedido();
-                case 5 -> finalizarPedido(pedido);
-                case 6 -> listarProdutosPedidosRecentes();
-                case 7 -> {
-                    int quantidade = lerInteiro(
-                            "Quantos pedidos deseja analisar?"
-                    );
+        do {
 
-                    mostrarMediaPedidos(quantidade);
+            try {
+
+                opcao = menu();
+
+                switch (opcao) {
+
+                    case 1 -> listarTodosOsProdutos();
+
+                    case 2 -> mostrarProduto(localizarProduto());
+
+                    case 3 -> mostrarProduto(localizarProdutoDescricao());
+
+                    case 4 -> pedido = iniciarPedido();
+
+                    case 5 -> {
+                        if (pedido != null) {
+                            finalizarPedido(pedido);
+                            pedido = null;
+                        } else {
+                            System.out.println("Nenhum pedido iniciado.");
+                        }
+                    }
+
+                    case 6 -> listarProdutosPedidosRecentes();
+
+                    case 7 -> {
+
+                        Integer quantidade = lerOpcao(
+                                "Quantos pedidos deseja analisar?",
+                                Integer.class
+                        );
+
+                        if (quantidade != null && quantidade > 0) {
+                            mostrarMediaPedidos(quantidade);
+                        } else {
+                            System.out.println("Quantidade inválida.");
+                        }
+                    }
+
+                    case 8 -> {
+
+                        Integer quantidade = lerOpcao(
+                                "Quantos pedidos deseja analisar?",
+                                Integer.class
+                        );
+
+                        Double valorMinimo = lerOpcao(
+                                "Digite o valor mínimo dos pedidos:",
+                                Double.class
+                        );
+
+                        if (quantidade != null && quantidade >= 0
+                                && valorMinimo != null) {
+
+                            mostrarPedidosFiltrados(
+                                    quantidade,
+                                    valorMinimo
+                            );
+
+                        } else {
+                            System.out.println("Dados inválidos.");
+                        }
+                    }
+
+                    case 0 -> System.out.println("Encerrando...");
+
+                    default -> System.out.println("Opção inválida.");
                 }
+
+            } catch (IllegalArgumentException e) {
+                System.out.println("Erro: " + e.getMessage());
             }
-            pausa();
-        }while(opcao != 0);
+
+            if (opcao != 0) {
+                pausa();
+            }
+
+        } while (opcao != 0);
 
         teclado.close();
     }
